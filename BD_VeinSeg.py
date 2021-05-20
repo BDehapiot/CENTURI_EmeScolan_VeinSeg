@@ -20,14 +20,14 @@ VEINSCAT = np.arange(0,30,5)  # define categories for veins in µm
 VEINSCAT_prox = 50 # distance for veins proximity maps in µm 
 
 THRESH_cd31 = 30 # threshold for binary
-MINSIZE_cd31 = 500 # minsize for binary objects in pixels (1000 for full size images)
-MAXFILT_cd31 = 14 # max filter size for veins radius in pixels (14 for full size images)
+MINSIZE_cd31 = 250 # minsize for binary objects in pixels (500 for full size images)
+MAXFILT_cd31 = 20 # max filter size for veins radius in pixels (20 for full size images)
 
 THRESH_iba1 = 30 # threshold for binary 
-MINSIZE_iba1 = 50 # minsize for binary objects (100 for full size images)
+MINSIZE_iba1 = 50 # minsize for binary objects (50 for full size images)
 
 THRESH_mhc2 = 30 # threshold for binary 
-MINSIZE_mhc2 = 50 # minsize for binary objects (100 for full size images)
+MINSIZE_mhc2 = 50 # minsize for binary objects (50 for full size images)
 
 #%% Open Stack from RAWNAME
 
@@ -102,11 +102,11 @@ for i in range(nCat):
     temp_proxmap = cd31_cat_edmOut_proxmaps[i,:,:]
     
     temp_iba1_bin = np.copy(iba1_bin)
-    temp_iba1_bin[temp_cd31_bin == 1] = 0 # remove iba1 signal overlapping veins
+    # temp_iba1_bin[temp_cd31_bin == 1] = 0 # remove iba1 signal overlapping veins
     temp_iba1_bin[temp_proxmap == 0] = 0 # remove iba1 signal outside proxmap
     
     temp_mhc2_bin = np.copy(mhc2_bin)
-    temp_mhc2_bin[temp_cd31_bin == 1] = 0 # remove mhc2 signal overlapping veins
+    # temp_mhc2_bin[temp_cd31_bin == 1] = 0 # remove mhc2 signal overlapping veins
     temp_mhc2_bin[temp_proxmap == 0] = 0 # remove mhc2 signal outside proxmap     
     
     proxmaps_area[i,0] = np.sum(temp_proxmap)*(PIXSIZE**2) # surface in µm²
