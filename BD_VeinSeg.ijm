@@ -22,6 +22,40 @@
 	open(folder+name_iba1_tif);
 	open(folder+name_mhc2_tif);
 
+/// ----- Dialog box ----- ///
+
+	Dialog.create("BD_VeinSeg");
+	Dialog.setInsets(10, 0, 0);
+	Dialog.addMessage("Create binary masks");
+	Dialog.setInsets(-10, 0, 0);
+	Dialog.addMessage("------------------------------------------");
+	thresh_cd31 = Dialog.addNumber("cd31 (threshold)", 30.0000);
+	thresh_aSMA = Dialog.addNumber("aSMA (threshold)", 45.0000);
+	thresh_iba1 = Dialog.addNumber("iba1 (threshold)", 30.0000);
+	thresh_mhc2 = Dialog.addNumber("mhc2 (threshold)", 30.0000);
+	Dialog.setInsets(20, 0, 0);
+	minSize_cd31 = Dialog.addNumber("cd31 (min. size)", 1000.0000);
+	minSize_aSMA = Dialog.addNumber("aSMA (min. size)", 250.0000);
+	minSize_iba1 = Dialog.addNumber("iba1 (min. size)", 50.0000);
+	minSize_mhc2 = Dialog.addNumber("mhc2 (min. size)", 500.0000);
+		
+	CCSB = Dialog.addCheckbox("Perform CCSB", true);
+	Dialog.setInsets(10, 0, 0);
+	Dialog.addMessage("Other Options");
+	Dialog.setInsets(-10, 0, 0);
+	Dialog.addMessage("------------------------------------------");
+	ZProj = Dialog.addCheckbox("Z-Project", false);
+	FC = Dialog.addCheckbox("Field Correction", false);
+	BC = Dialog.addCheckbox("Bleach Correction", false);
+	
+	Dialog.show();
+	
+	RBpix = Dialog.getNumber();
+	CCSB = Dialog.getCheckbox();
+	ZProj = Dialog.getCheckbox();
+	FC = Dialog.getCheckbox();
+	BC = Dialog.getCheckbox();
+
 /// ----- Thresholding segmentation ----- ///
 
 	thresh_cd31 = 30; // parameters
@@ -385,6 +419,9 @@
 	for(i=0; i<bin_count; i++){
 
 		// Veins 
+		
+		run("Set Measurements...", "integrated redirect=None decimal=3");
+		
 		selectWindow("veins_cat");
 		setSlice(i+1); run("Select All"); run("Measure");
 		veins_cat_area[i] = getResult("IntDen",0);
@@ -438,17 +475,17 @@
 
 	// Fill ResultsTable
 	for (i=0; i<bin_count; i++) {
-		setResult("veins_cat_area",i,veins_cat_area[i]);
-		setResult("veins_proxmap_area",i,veins_proxmap_area[i]);
-		setResult("arteries_cat_area",i,arteries_cat_area[i]);
-		setResult("arteries_proxmap_area",i,arteries_proxmap_area[i]);
-		setResult("iba1_veins_proxmaps_area",i,iba1_veins_proxmaps_area[i]);
+//		setResult("veins_cat_area",i,veins_cat_area[i]);
+//		setResult("veins_proxmap_area",i,veins_proxmap_area[i]);
+//		setResult("arteries_cat_area",i,arteries_cat_area[i]);
+//		setResult("arteries_proxmap_area",i,arteries_proxmap_area[i]);
+//		setResult("iba1_veins_proxmaps_area",i,iba1_veins_proxmaps_area[i]);
 		setResult("iba1_veins_proxmaps_ratio",i,iba1_veins_proxmaps_ratio[i]);
-		setResult("mhc2_veins_proxmaps_area",i,mhc2_veins_proxmaps_area[i]);
+//		setResult("mhc2_veins_proxmaps_area",i,mhc2_veins_proxmaps_area[i]);
 		setResult("mhc2_veins_proxmaps_ratio",i,mhc2_veins_proxmaps_ratio[i]);
-		setResult("iba1_arteries_proxmaps_area",i,iba1_arteries_proxmaps_area[i]);
+//		setResult("iba1_arteries_proxmaps_area",i,iba1_arteries_proxmaps_area[i]);
 		setResult("iba1_arteries_proxmaps_ratio",i,iba1_arteries_proxmaps_ratio[i]);
-		setResult("mhc2_arteries_proxmaps_area",i,mhc2_arteries_proxmaps_area[i]);
+//		setResult("mhc2_arteries_proxmaps_area",i,mhc2_arteries_proxmaps_area[i]);
 		setResult("mhc2_arteries_proxmaps_ratio",i,mhc2_arteries_proxmaps_ratio[i]);
 	}
 	setOption("ShowRowNumbers", false);
