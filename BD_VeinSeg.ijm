@@ -29,46 +29,41 @@
 	Dialog.addMessage("Create binary masks");
 	Dialog.setInsets(-10, 0, 0);
 	Dialog.addMessage("------------------------------------------");
-	thresh_cd31 = Dialog.addNumber("cd31 (threshold)", 30.0000);
-	thresh_aSMA = Dialog.addNumber("aSMA (threshold)", 45.0000);
-	thresh_iba1 = Dialog.addNumber("iba1 (threshold)", 30.0000);
-	thresh_mhc2 = Dialog.addNumber("mhc2 (threshold)", 30.0000);
+	thresh_cd31 = Dialog.addNumber("cd31 (threshold)", 30.0000); // parameters
+	thresh_aSMA = Dialog.addNumber("aSMA (threshold)", 45.0000); // parameters
+	thresh_iba1 = Dialog.addNumber("iba1 (threshold)", 30.0000); // parameters 
+	thresh_mhc2 = Dialog.addNumber("mhc2 (threshold)", 30.0000); // parameters
 	Dialog.setInsets(20, 0, 0);
-	minSize_cd31 = Dialog.addNumber("cd31 (min. size)", 1000.0000);
-	minSize_aSMA = Dialog.addNumber("aSMA (min. size)", 250.0000);
-	minSize_iba1 = Dialog.addNumber("iba1 (min. size)", 50.0000);
-	minSize_mhc2 = Dialog.addNumber("mhc2 (min. size)", 500.0000);
-		
-	CCSB = Dialog.addCheckbox("Perform CCSB", true);
+	minSize_cd31 = Dialog.addNumber("cd31 (min. size)", 250.0000); // parameters (pixel) 1000
+	minSize_aSMA = Dialog.addNumber("aSMA (min. size)", 250.0000); // parameters (pixel) 250 
+	minSize_iba1 = Dialog.addNumber("iba1 (min. size)", 50.0000); // parameters (pixel) 50 
+	minSize_mhc2 = Dialog.addNumber("mhc2 (min. size)", 50.0000); // parameters (pixel) 50
+
 	Dialog.setInsets(10, 0, 0);
-	Dialog.addMessage("Other Options");
+	Dialog.addMessage("Veins & arteries maps");
 	Dialog.setInsets(-10, 0, 0);
 	Dialog.addMessage("------------------------------------------");
-	ZProj = Dialog.addCheckbox("Z-Project", false);
-	FC = Dialog.addCheckbox("Field Correction", false);
-	BC = Dialog.addCheckbox("Bleach Correction", false);
+	max_filt = Dialog.addNumber("Max filt. size", 15.0000); // parameters	
+	proxmap_dist = Dialog.addNumber("Analysis distance", 50.0000); // parameters (µm)
+	bin_size = Dialog.addNumber("Number of bins", 10.0000); // parameters
+	bin_count = Dialog.addNumber("Number of bins", 5.0000); // parameters
 	
 	Dialog.show();
 	
-	RBpix = Dialog.getNumber();
-	CCSB = Dialog.getCheckbox();
-	ZProj = Dialog.getCheckbox();
-	FC = Dialog.getCheckbox();
-	BC = Dialog.getCheckbox();
-
+	thresh_cd31 = Dialog.getNumber();
+	thresh_aSMA = Dialog.getNumber();
+	thresh_iba1 = Dialog.getNumber();
+	thresh_mhc2 = Dialog.getNumber();
+	minSize_cd31 = Dialog.getNumber();
+	minSize_aSMA = Dialog.getNumber();
+	minSize_iba1 = Dialog.getNumber();
+	minSize_mhc2 = Dialog.getNumber();
+	max_filt = Dialog.getNumber();
+	proxmap_dist = Dialog.getNumber();
+	bin_size = Dialog.getNumber();
+	bin_count = Dialog.getNumber();
+					
 /// ----- Thresholding segmentation ----- ///
-
-	thresh_cd31 = 30; // parameters
-	minSize_cd31 = 1000; // parameters (pixel)
-	
-	thresh_aSMA = 45; // parameters
-	minSize_aSMA = 250; // parameters (pixel)
-
-	thresh_iba1 = 30; // parameters
-	minSize_iba1 = 50; // parameters (pixel)
-
-	thresh_mhc2 = 30; // parameters
-	minSize_mhc2 = 50; // parameters (pixel)
 
 	// Thresholding cd31
 	selectWindow(name_cd31_tif);
@@ -140,8 +135,6 @@
 
 /// ----- Determine veins diameter ----- ///
 
-	max_cd31 = 15; // parameters
-	
 	selectWindow(RawMask_cd31_filt);
 	run("Options...", "iterations=1 count=1 black edm=8-bit");
 	run("Distance Map");
@@ -153,7 +146,7 @@
 	
 	selectWindow(EDMin_cd31);
 	run("Duplicate...", " ");
-	run("Maximum...", "radius="+max_cd31+"");
+	run("Maximum...", "radius="+max_filt+"");
 	imageCalculator("AND create", "EDMin_cd31-1","RawMask_cd31_filt");
 	Stack.setXUnit("micron");
 	run("Properties...", "channels=1 slices=1 frames=1 pixel_width="+pixelWidth+" pixel_height="+pixelHeight+" voxel_depth=1");
@@ -162,8 +155,6 @@
 
 /// ----- Determine artery diameter ----- ///
 
-	max_aSMA = 15; // parameters
-	
 	selectWindow(RawMask_aSMA_filt);
 	run("Options...", "iterations=1 count=1 black edm=8-bit");
 	run("Distance Map");
@@ -175,7 +166,7 @@
 	
 	selectWindow(EDMin_aSMA);
 	run("Duplicate...", " ");
-	run("Maximum...", "radius="+max_aSMA+"");
+	run("Maximum...", "radius="+max_filt+"");
 	imageCalculator("AND create", "EDMin_aSMA-1","RawMask_aSMA_filt");
 	Stack.setXUnit("micron");
 	run("Properties...", "channels=1 slices=1 frames=1 pixel_width="+pixelWidth+" pixel_height="+pixelHeight+" voxel_depth=1");
@@ -184,11 +175,6 @@
 
 /// ----- Categorize veins according to diameter ----- ///	
 
-	bin_size = 10; // parameters
-	bin_count = 5; // parameters
-	minSize_cat = 200; // parameters (pixel)
-	proxmap_dist = 50; // parameters (µm)
-	
 	binrange = newArray(bin_count);
 	for(i=0; i<bin_count; i++){
 		binrange[i] = (i)*bin_size;
@@ -206,7 +192,7 @@
 			setThreshold(binrange[i]+1, binrange[i+1]); 
 			setOption("BlackBackground", true);
 			run("Convert to Mask"); rename("temp");	
-			run("Analyze Particles...", "size="+minSize_cat+"-Infinity pixel show=Masks"); // remove small objects					
+			run("Analyze Particles...", "size="+minSize_cd31+"-Infinity pixel show=Masks"); // remove small objects					
 			run("Invert LUT"); rename("temp_filtered");
 			run("Select All"); run("Copy");
 			selectWindow("veins_cat");
@@ -227,7 +213,7 @@
 			setThreshold(binrange[i], binrange[i+1]);
 			setOption("BlackBackground", true);
 			run("Convert to Mask");	rename("temp");	
-			run("Analyze Particles...", "size="+minSize_cat+"-Infinity pixel show=Masks"); // remove small objects	
+			run("Analyze Particles...", "size="+minSize_cd31+"-Infinity pixel show=Masks"); // remove small objects	
 			run("Invert LUT"); rename("temp_filtered");
 			run("Select All"); run("Copy");
 			selectWindow("veins_cat");
@@ -249,7 +235,7 @@
 			setThreshold(binrange[i], 255);
 			setOption("BlackBackground", true);
 			run("Convert to Mask");	rename("temp");	
-			run("Analyze Particles...", "size="+minSize_cat+"-Infinity pixel show=Masks");
+			run("Analyze Particles...", "size="+minSize_cd31+"-Infinity pixel show=Masks");
 			run("Invert LUT"); rename("temp_filtered");
 			run("Select All"); run("Copy");
 			selectWindow("veins_cat");
@@ -285,11 +271,6 @@
 
 /// ----- Categorize arteries according to diameter ----- ///	
 
-	bin_size = 10; // parameters
-	bin_count = 5; // parameters
-	minSize_cat = 200; // parameters (pixel)
-	proxmap_dist = 50; // parameters (µm)
-	
 	binrange = newArray(bin_count);
 	for(i=0; i<bin_count; i++){
 		binrange[i] = (i)*bin_size;
@@ -307,7 +288,7 @@
 			setThreshold(binrange[i]+1, binrange[i+1]); 
 			setOption("BlackBackground", true);
 			run("Convert to Mask"); rename("temp");	
-			run("Analyze Particles...", "size="+minSize_cat+"-Infinity pixel show=Masks"); // remove small objects					
+			run("Analyze Particles...", "size="+minSize_aSMA+"-Infinity pixel show=Masks"); // remove small objects					
 			run("Invert LUT"); rename("temp_filtered");
 			run("Select All"); run("Copy");
 			selectWindow("arteries_cat");
@@ -328,7 +309,7 @@
 			setThreshold(binrange[i], binrange[i+1]);
 			setOption("BlackBackground", true);
 			run("Convert to Mask");	rename("temp");	
-			run("Analyze Particles...", "size="+minSize_cat+"-Infinity pixel show=Masks"); // remove small objects	
+			run("Analyze Particles...", "size="+minSize_aSMA+"-Infinity pixel show=Masks"); // remove small objects	
 			run("Invert LUT"); rename("temp_filtered");
 			run("Select All"); run("Copy");
 			selectWindow("arteries_cat");
@@ -350,7 +331,7 @@
 			setThreshold(binrange[i], 255);
 			setOption("BlackBackground", true);
 			run("Convert to Mask");	rename("temp");	
-			run("Analyze Particles...", "size="+minSize_cat+"-Infinity pixel show=Masks");
+			run("Analyze Particles...", "size="+minSize_aSMA+"-Infinity pixel show=Masks");
 			run("Invert LUT"); rename("temp_filtered");
 			run("Select All"); run("Copy");
 			selectWindow("arteries_cat");
@@ -447,6 +428,7 @@
 		mhc2_veins_proxmaps_ratio[i] = mhc2_veins_proxmaps_area[i]/veins_proxmap_area[i];
 
 		// Arteries
+		
 		selectWindow("arteries_cat");
 		setSlice(i+1); run("Select All"); run("Measure");
 		arteries_cat_area[i] = getResult("IntDen",0);
@@ -475,18 +457,18 @@
 
 	// Fill ResultsTable
 	for (i=0; i<bin_count; i++) {
+		setResult("iba1_veins_proxmaps_ratio",i,iba1_veins_proxmaps_ratio[i]);
+		setResult("mhc2_veins_proxmaps_ratio",i,mhc2_veins_proxmaps_ratio[i]);
+		setResult("iba1_arteries_proxmaps_ratio",i,iba1_arteries_proxmaps_ratio[i]);
+		setResult("mhc2_arteries_proxmaps_ratio",i,mhc2_arteries_proxmaps_ratio[i]);
 //		setResult("veins_cat_area",i,veins_cat_area[i]);
 //		setResult("veins_proxmap_area",i,veins_proxmap_area[i]);
 //		setResult("arteries_cat_area",i,arteries_cat_area[i]);
 //		setResult("arteries_proxmap_area",i,arteries_proxmap_area[i]);
 //		setResult("iba1_veins_proxmaps_area",i,iba1_veins_proxmaps_area[i]);
-		setResult("iba1_veins_proxmaps_ratio",i,iba1_veins_proxmaps_ratio[i]);
 //		setResult("mhc2_veins_proxmaps_area",i,mhc2_veins_proxmaps_area[i]);
-		setResult("mhc2_veins_proxmaps_ratio",i,mhc2_veins_proxmaps_ratio[i]);
 //		setResult("iba1_arteries_proxmaps_area",i,iba1_arteries_proxmaps_area[i]);
-		setResult("iba1_arteries_proxmaps_ratio",i,iba1_arteries_proxmaps_ratio[i]);
 //		setResult("mhc2_arteries_proxmaps_area",i,mhc2_arteries_proxmaps_area[i]);
-		setResult("mhc2_arteries_proxmaps_ratio",i,mhc2_arteries_proxmaps_ratio[i]);
 	}
 	setOption("ShowRowNumbers", false);
 	updateResults;			
@@ -498,26 +480,42 @@
 	run("Duplicate...", " "); rename("RawMask_cd31_filt_outlines"); RawMask_cd31_filt_outlines = getTitle();
 	run("Outline");
 	run("Merge Channels...", "c2=RawMask_cd31_filt_outlines c4="+name_cd31_tif+" create");
+	rename("RawMask_cd31_filt_outlines");
 	
 	selectWindow(RawMask_aSMA_filt);
 	run("Duplicate...", " "); rename("RawMask_aSMA_filt_outlines"); RawMask_aSMA_filt_outlines = getTitle();
 	run("Outline");
 	run("Merge Channels...", "c2=RawMask_aSMA_filt_outlines c4="+name_aSMA_tif+" create");
+	rename("RawMask_aSMA_filt_outlines");
 
 	selectWindow(RawMask_iba1_filt);
 	run("Duplicate...", " "); rename("RawMask_iba1_filt_outlines"); RawMask_iba1_filt_outlines = getTitle();
 	run("Outline");
 	run("Merge Channels...", "c2=RawMask_iba1_filt_outlines c4="+name_iba1_tif+" create");
+	rename("RawMask_iba1_filt_outlines");
 
 	selectWindow(RawMask_mhc2_filt);
 	run("Duplicate...", " "); rename("RawMask_mhc2_filt_outlines"); RawMask_mhc2_filt_outlines = getTitle();
 	run("Outline");
 	run("Merge Channels...", "c2=RawMask_mhc2_filt_outlines c4="+name_mhc2_tif+" create");
+	rename("RawMask_mhc2_filt_outlines");
 
 	setBatchMode("exit and display");
 	run("Tile");
-	
 
+/// --- Close all --- ///
+
+	waitForUser( "Pause","Click Ok when finished");
+	macro "Close All Windows" { 
+	while (nImages>0) { 
+	selectImage(nImages); 
+	close();
+	}
+	if (isOpen("Log")) {selectWindow("Log"); run("Close");} 
+	if (isOpen("Summary")) {selectWindow("Summary"); run("Close");} 
+	if (isOpen("Results")) {selectWindow("Results"); run("Close");}
+	if (isOpen("ROI Manager")) {selectWindow("ROI Manager"); run("Close");}
+	} 
 	
 	
 	
