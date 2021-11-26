@@ -42,7 +42,7 @@
 	Dialog.addMessage("_____________________________________");	
 
 	Dialog.setInsets(5, 0, 0);
-	name_addsub = Dialog.addString("name", "none");
+	name_addsub = Dialog.addString("name", "none"); // select "none" to ignore
 
 	choices = newArray("add", "subtract");
 	choice_addsub = Dialog.addChoice("operation", choices, "add");
@@ -54,15 +54,17 @@
 	Dialog.setInsets(-10, 0, 0);
 	Dialog.addMessage("_____________________________________");	
 
+	Dialog.addMessage("threshold (A.U.)  .................................................", 12, "#000000");
 	Dialog.setInsets(5, 0, 0);
-	thresh_ridge = Dialog.addNumber("ridge (thresh)", 30.0000); // parameters
-	thresh_test = Dialog.addNumber("test (thresh)", 30.0000); // parameters
-	thresh_addsub = Dialog.addNumber("add/sub (thresh)", 30.0000); // parameters 
-
-	Dialog.setInsets(20, 0, 0);
-	minsize_ridge = Dialog.addNumber("ridge (min. size)", 250.0000); // parameters (pixel)
-	minsize_test = Dialog.addNumber("test (min. size)", 50.0000); // parameters (pixel)  
-	minsize_addsub = Dialog.addNumber("add/sub (min. size)", 50.0000); // parameters (pixel) 
+	thresh_ridge = Dialog.addNumber("ridge", 30.0000); // parameters
+	thresh_test = Dialog.addNumber("test", 30.0000); // parameters
+	thresh_addsub = Dialog.addNumber("add/sub", 30.0000); // parameters 
+	
+	Dialog.addMessage("min. size (number of pixels)  ............................", 12, "#000000");
+	Dialog.setInsets(5, 0, 0);
+	minsize_ridge = Dialog.addNumber("ridge", 250.0000); // parameters (pixel)
+	minsize_test = Dialog.addNumber("test", 50.0000); // parameters (pixel)  
+	minsize_addsub = Dialog.addNumber("add/sub", 50.0000); // parameters (pixel) 
 
 	// ---------------------------------------------------------------------	
 
@@ -72,9 +74,9 @@
 	Dialog.addMessage("_____________________________________");
 
 	Dialog.setInsets(5, 0, 0);
-	max_filt = Dialog.addNumber("max filt. size", 15.0000); // parameters 	
-	proxmap_dist = Dialog.addNumber("analysis distance", 50.0000); // parameters (µm)
-	bin_size = Dialog.addNumber("size of bins", 10.0000); // parameters
+	max_filt = Dialog.addNumber("max filt. size (pixels)", 15.0000); // parameters 	
+	proxmap_dist = Dialog.addNumber("analysis distance (µm)", 50.0000); // parameters (µm)
+	bin_size = Dialog.addNumber("size of bins (µm)", 10.0000); // parameters
 	bin_count = Dialog.addNumber("number of bins", 5.0000); // parameters	
 
 	// ---------------------------------------------------------------------
@@ -212,6 +214,7 @@
 	Stack.setXUnit("micron");
 	run("Properties...", "channels=1 slices=1 frames=1 pixel_width="+pixelWidth+" pixel_height="+pixelHeight+" voxel_depth=1");
 	rename("EDMin_ridge_max"); EDMin_ridge_max = getTitle(); setMinAndMax(0, 100);
+	close("EDMin_ridge-1");
 
 /// ____ Categorize ridge according to diameter _____________________________ ///	
 
@@ -222,10 +225,13 @@
 	//Array.show(binrange) 
 
 	newImage("ridge_cat", "8-bit color-mode", width, height, 1, 1, bin_count);
+	ridge_cat = getTitle();
 	newImage("ridge_cat_proxmap", "8-bit color-mode", width, height, 1, 1, bin_count);
+	ridge_cat_proxmap = getTitle();
 	for(i=0; i<bin_count; i++){
 		selectWindow(EDMin_ridge_max);
 		run("Duplicate...", " ");
+		
 		if (i==0){
 			
 			// Threshold ridge of interest
@@ -247,6 +253,7 @@
 			
 			close("temp"); close("temp_filtered"); close("EDM_temp_filtered");
 		}
+		
 		if ((i>0) && (i<bin_count-1)){
 
 			// Threshold ridge of interest
@@ -269,6 +276,7 @@
 			
 			close("temp"); close("temp_filtered"); close("EDM_temp_filtered");
 		}	
+		
 		if (i==bin_count-1){
 
 			// Threshold ridge of interest
@@ -291,9 +299,9 @@
 			setSlice(i+1); run("Paste"); // insert image in ridge_cat_proxmap (stack)
 			run("Select None");
 			
-			close("temp"); close("temp_filtered"); close("EDM_temp_filtered");
-			
-		}		
+			close("temp"); close("temp_filtered"); close("EDM_temp_filtered");			
+		}
+				
 	}
 
 	// ---------------------------------------------------------------------	
@@ -338,17 +346,17 @@
 
 		selectWindow("ridge_cat");
 		setSlice(i+1); run("Select All"); run("Measure");
-		ridge_cat_area[i] = getResult("IntDen",0);
+		ridge_cat_area[i] = getResult("IntDen",0); // * (pixelWidth*pixelWidth);
 		run("Select None"); run("Clear Results");
 
 		selectWindow("ridge_cat_proxmap");
 		setSlice(i+1); run("Select All"); run("Measure");
-		ridge_proxmap_area[i] = getResult("IntDen",0);
+		ridge_proxmap_area[i] = getResult("IntDen",0); // * (pixelWidth*pixelWidth);
 		run("Select None"); run("Clear Results");
 
 		selectWindow("test_ridge_proxmaps");
 		setSlice(i+1); run("Select All"); run("Measure");
-		test_ridge_proxmaps_area[i] = getResult("IntDen",0);
+		test_ridge_proxmaps_area[i] = getResult("IntDen",0); // * (pixelWidth*pixelWidth);
 		run("Select None"); run("Clear Results");
 
 		test_ridge_proxmaps_ratio[i] = test_ridge_proxmaps_area[i]/ridge_proxmap_area[i];
@@ -374,7 +382,8 @@
 	run("Duplicate...", " "); rename("RawMask_ridge_filt_outlines"); RawMask_ridge_filt_outlines = getTitle();
 	run("Outline");
 	run("Merge Channels...", "c2=RawMask_ridge_filt_outlines c4="+fullname_ridge_tif+" create");
-	rename(name_ridge+" mask outlines");
+	rename(name_ridge+"_mask_outlines");
+	ridge_mask_outlines = getTitle();
 
 	// ---------------------------------------------------------------------	
 	
@@ -382,7 +391,8 @@
 	run("Duplicate...", " "); rename("RawMask_test_filt_outlines"); RawMask_test_filt_outlines = getTitle();
 	run("Outline");
 	run("Merge Channels...", "c2=RawMask_test_filt_outlines c4="+fullname_test_tif+" create");
-	rename(name_test+" mask outlines");
+	rename(name_test+"_mask_outlines");
+	test_mask_outlines = getTitle();
 
 	// ---------------------------------------------------------------------	
 
@@ -392,79 +402,89 @@
 		run("Duplicate...", " "); rename("RawMask_addsub_filt_outlines"); RawMask_addsub_filt_outlines = getTitle();
 		run("Outline");
 		run("Merge Channels...", "c2=RawMask_addsub_filt_outlines c4="+fullname_addsub_tif+" create");
-		rename(name_addsub+" mask outlines");
+		rename(name_addsub+"_mask_outlines");
+		addsub_mask_outlines = getTitle();
 
+	}
+
+/// ____ Rename _____________________________________________________________ ///
+
+	if (name_addsub!="none"){
+
+		selectWindow(RawMask_addsub_filt);
+		rename(name_addsub+"_mask");
+
+		selectWindow(RawMask_test_filt_backup);
+		rename(name_test+"_mask");		
+
+		selectWindow(RawMask_test_filt);						
+		if (choice_addsub=="add"){
+			rename(name_test+"+"+name_addsub+"_mask");
+		}
+
+		if (choice_addsub=="subtract"){
+			rename(name_test+"-"+name_addsub+"_mask");
+		}
+		
+	} else {
+
+		selectWindow(RawMask_test_filt);
+		rename(name_test+"_mask");
+
+		close(RawMask_test_filt_backup);
+				
+	}
+
+	selectWindow(RawMask_ridge_filt);
+	rename(name_ridge+"(ridge)_mask");
+
+	selectWindow(EDMin_ridge);
+	rename("EDM_ridge");
+
+	selectWindow(EDMin_ridge_max);
+	rename("EDM_ridge_max");
+
+	selectWindow(ridge_cat);
+	rename("ridge_categories");
+
+	selectWindow(ridge_cat_proxmap);
+	rename("ridge_proxmap");
+
+	selectWindow(test_ridge_proxmaps);
+	rename(name_test+"_ridge_proxmap");
+
+	if (name_addsub!="none"){
+
+		selectWindow(addsub_mask_outlines);
+		
+	} else {
+
+		selectWindow(test_mask_outlines);
+		
 	}
 
 	// ---------------------------------------------------------------------
 
-	//setBatchMode("exit and display");
+	setBatchMode("exit and display");
 	run("Tile");
 
 	/// ____ Close all __________________________________________________________ ///
 
-	waitForUser( "Pause","Click Ok when finished");
-	macro "Close All Windows" { 
-	while (nImages>0) { 
-	selectImage(nImages); 
-	close();
-	}
-	if (isOpen("Log")) {selectWindow("Log"); run("Close");} 
-	if (isOpen("Summary")) {selectWindow("Summary"); run("Close");} 
-	if (isOpen("Results")) {selectWindow("Results"); run("Close");}
-	if (isOpen("ROI Manager")) {selectWindow("ROI Manager"); run("Close");}
-	} 
+	nextchoice = getBoolean("What next?", "Save", "CloseAll");
 
-	stop
-
-	// ---------------------------------------------------------------------	
-
-	if (name_addsub!="none"){
-
-		selectWindow(RawMask_addsub_filt);
-		run("Duplicate...", " "); rename("RawMask_addsub_filt_outlines"); RawMask_addsub_filt_outlines = getTitle();
-		run("Outline");
-		run("Merge Channels...", "c2=RawMask_addsub_filt_outlines c4="+fullname_addsub_tif+" create");
-		rename(name_addsub+" mask outlines");
-
-		selectWindow(RawMask_addsub_filt);
-		rename(name_addsub+" mask");
-
-		// Add addsub
-		if (choice_addsub == "add"){
-
-			selectWindow(RawMask_test_filt);
-			rename(name_test + " + " + name_addsub + " mask");
-			
+	if (nextchoice==0){
+		
+		macro "Close All Windows" { 
+		while (nImages>0) { 
+		selectImage(nImages); 
+		close();
 		}
-
-		// Subtract addsub
-		if (choice_addsub == "subtracte"){
-
-			selectWindow(RawMask_test_filt);
-			rename(name_test + " - " + name_addsub + " mask");
-			
-		}		
-
+		if (isOpen("Log")) {selectWindow("Log"); run("Close");} 
+		if (isOpen("Summary")) {selectWindow("Summary"); run("Close");} 
+		if (isOpen("Results")) {selectWindow("Results"); run("Close");}
+		if (isOpen("ROI Manager")) {selectWindow("ROI Manager"); run("Close");}
+		} 
 		
 	}
 
-	
-
-	setBatchMode("exit and display");
-	run("Tile");
-
-/// ____ Close all __________________________________________________________ ///
-
-	waitForUser( "Pause","Click Ok when finished");
-	macro "Close All Windows" { 
-	while (nImages>0) { 
-	selectImage(nImages); 
-	close();
-	}
-	if (isOpen("Log")) {selectWindow("Log"); run("Close");} 
-	if (isOpen("Summary")) {selectWindow("Summary"); run("Close");} 
-	if (isOpen("Results")) {selectWindow("Results"); run("Close");}
-	if (isOpen("ROI Manager")) {selectWindow("ROI Manager"); run("Close");}
-	} 
 	
