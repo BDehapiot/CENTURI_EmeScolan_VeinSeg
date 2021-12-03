@@ -346,17 +346,17 @@
 
 		selectWindow("ridge_cat");
 		setSlice(i+1); run("Select All"); run("Measure");
-		ridge_cat_area[i] = getResult("IntDen",0); // * (pixelWidth*pixelWidth);
+		ridge_cat_area[i] = getResult("IntDen",0) * (pixelWidth*pixelWidth);
 		run("Select None"); run("Clear Results");
 
 		selectWindow("ridge_cat_proxmap");
 		setSlice(i+1); run("Select All"); run("Measure");
-		ridge_proxmap_area[i] = getResult("IntDen",0); // * (pixelWidth*pixelWidth);
+		ridge_proxmap_area[i] = getResult("IntDen",0) * (pixelWidth*pixelWidth);
 		run("Select None"); run("Clear Results");
 
 		selectWindow("test_ridge_proxmaps");
 		setSlice(i+1); run("Select All"); run("Measure");
-		test_ridge_proxmaps_area[i] = getResult("IntDen",0); // * (pixelWidth*pixelWidth);
+		test_ridge_proxmaps_area[i] = getResult("IntDen",0) * (pixelWidth*pixelWidth);
 		run("Select None"); run("Clear Results");
 
 		test_ridge_proxmaps_ratio[i] = test_ridge_proxmaps_area[i]/ridge_proxmap_area[i];
@@ -366,6 +366,7 @@
 	// ---------------------------------------------------------------------	
 
 	// Fill ResultsTable
+	
 	for (i=0; i<bin_count; i++) {
 		setResult("test_ridge_proxmaps_ratio", i, test_ridge_proxmaps_ratio[i]);
 		setResult("ridge_cat_area", i, ridge_cat_area[i]);
@@ -416,20 +417,30 @@
 
 		selectWindow(RawMask_test_filt_backup);
 		rename(name_test+"_mask");		
-
-		selectWindow(RawMask_test_filt);						
+				
 		if (choice_addsub=="add"){
+			selectWindow(RawMask_test_filt);	
 			rename(name_test+"+"+name_addsub+"_mask");
+
+			selectWindow(test_ridge_proxmaps);
+			rename(name_test+"+"+name_addsub+"_ridge_proxmap");
 		}
 
 		if (choice_addsub=="subtract"){
+			selectWindow(RawMask_test_filt);	
 			rename(name_test+"-"+name_addsub+"_mask");
+
+			selectWindow(test_ridge_proxmaps);
+			rename(name_test+"-"+name_addsub+"_ridge_proxmap");
 		}
 		
 	} else {
 
 		selectWindow(RawMask_test_filt);
 		rename(name_test+"_mask");
+
+		selectWindow(test_ridge_proxmaps);
+		rename(name_test+"_ridge_proxmap");
 
 		close(RawMask_test_filt_backup);
 				
@@ -450,9 +461,6 @@
 	selectWindow(ridge_cat_proxmap);
 	rename("ridge_proxmap");
 
-	selectWindow(test_ridge_proxmaps);
-	rename(name_test+"_ridge_proxmap");
-
 	if (name_addsub!="none"){
 
 		selectWindow(addsub_mask_outlines);
@@ -470,21 +478,20 @@
 
 	/// ____ Close all __________________________________________________________ ///
 
-	nextchoice = getBoolean("What next?", "Save", "CloseAll");
+	//nextchoice = getBoolean("What next?", "Save", "CloseAll");
 
-	if (nextchoice==0){
-		
-		macro "Close All Windows" { 
-		while (nImages>0) { 
-		selectImage(nImages); 
-		close();
-		}
-		if (isOpen("Log")) {selectWindow("Log"); run("Close");} 
-		if (isOpen("Summary")) {selectWindow("Summary"); run("Close");} 
-		if (isOpen("Results")) {selectWindow("Results"); run("Close");}
-		if (isOpen("ROI Manager")) {selectWindow("ROI Manager"); run("Close");}
-		} 
-		
+	waitForUser( "Pause","Click Ok when finished");
+
+	macro "Close All Windows" { 
+	while (nImages>0) { 
+	selectImage(nImages); 
+	close();
 	}
+	if (isOpen("Log")) {selectWindow("Log"); run("Close");} 
+	if (isOpen("Summary")) {selectWindow("Summary"); run("Close");} 
+	if (isOpen("Results")) {selectWindow("Results"); run("Close");}
+	if (isOpen("ROI Manager")) {selectWindow("ROI Manager"); run("Close");}
+	} 
+		
 
 	
